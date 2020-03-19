@@ -3,10 +3,10 @@
 
 (def mmask (.-ethereum js/window))
 
-(defn installed?[] 
-  (some? mmask))
+(defn not-installed?[] 
+  (nil? mmask))
 
 (defn connect[]
-    (if (installed?)
-      (.send mmask "eth_requestAccounts")
-      (throw "MetaMask is not installed")))
+    (if (not-installed?)
+      (throw "MetaMask is not installed")
+      (.send mmask "eth_requestAccounts")))
