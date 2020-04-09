@@ -1,7 +1,7 @@
 (ns presentation.the-controller
   (:require [reagent.dom :as rdom]
             [reagent.core :as r]
-            [ethereum-proxy :as eth]))
+            [ethereum-provider :as eth]))
 
 (def status (js/document.getElementById "status"))
 (def content (js/document.getElementById "main"))
@@ -19,7 +19,7 @@
 
 (defn new-token-stream[account balance]
   [:p 
-    [:span "account: " account "balance:" balance]
+    [:span "account: " account " balance: " balance]
     [:br] 
     [:span "create new token stream"]
     [:br] 
