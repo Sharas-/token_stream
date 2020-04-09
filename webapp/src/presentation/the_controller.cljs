@@ -1,36 +1,43 @@
 (ns presentation.the-controller
   (:require [reagent.dom :as rdom]
-            [ethereum-provider :as eth-provider]))
+            [reagent.core :as r]
+            [ethereum-proxy :as eth]))
 
-(def provider-state (js/document.getElementById "status"))
+(def status (js/document.getElementById "status"))
 (def content (js/document.getElementById "main"))
 
 (defn render[container content]
   (rdom/render content container))
 
-;;--- HTML compontents ---
-;(defn status [message]
-;    [:p message])
+;;--- compontents ---
+(def token-balance (r/atom ""))
 
-(defn create-token-stream[account]
-  [:p "create new token stream"
+(defn ^:export on-token-entered[account token-id]
+  (-> (eth/get-token-balance account token-id)
+      (.then #(reset! token-balance %))
+      (.catch #(js/window.alert %))))
+
+(defn new-token-stream[account balance]
+  [:p 
+    [:span "account: " account "balance:" balance]
+    [:br] 
+    [:span "create new token stream"]
     [:br] 
     [:label {:for "token-address"} "token address"]
-    [:input.token-address {:type "text"}]])
+    [:input#token-address {:type "text" :onKeyPress #(when (some #{13} [(.-keyCode %) (.-which %)])
+                                          (let [token-id (-> % .-target .-value)]
+                                            (presentation.the-controller/on-token-entered account token-id)))}]
+    [:span @token-balance]])
 
-(defn on-accounts-changed[accounts]
-  (render content "")
-  (if (empty? accounts)
-    (render provider-state "Connect to ethereum provider to continue")
-    ;else
-    (let [account (get accounts 0)]
-      (render provider-state (str "Connected to account: " account))
-      (render content [create-token-stream account]))))
+(defn on-connected[account]
+  (->(eth/get-ether-balance account)
+     (.then #(render content [new-token-stream account %]))))
 
 (defn ^:export main[]
-  (if (eth-provider/not-installed?)
-    (render provider-state "Ethereum provider is not installed. Please install it to continue.")
+  (if (eth/not-installed?)
+    (render status "Ethereum provider is not installed. Please install it to continue.")
     ;else
-    (-> (eth-provider/connect on-accounts-changed)
-        (.catch #(render provider-state (str "Error: " %))))))
+    (-> (eth/connect on-connected
+                    #(render content "Connect to ethereum provider to continue"))
+        (.catch #(render content (str "error connecting to ethereum: " %))))))
 
