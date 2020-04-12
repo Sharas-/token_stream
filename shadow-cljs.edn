@@ -2,6 +2,7 @@
  :dependencies [[reagent "0.10.0"]]
  :dev-http {8080 "webapp/assets"}
  :builds {:token_stream {:target :browser
+                         :autoload true
                          :output-dir "webapp/assets/js"
                          :asset-path "webapp/assets"
                          :modules {:main {:init-fn presentation.the-controller/main}}}}}

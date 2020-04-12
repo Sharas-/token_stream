@@ -1,43 +1,43 @@
 (ns presentation.the-controller
   (:require [reagent.dom :as rdom]
-            [reagent.core :as r]
-            [ethereum-provider :as eth]))
+            [ethereum-provider :as eth])
+  (:use [presentation.components.new-token-stream :only [new-token-stream token-status]]
+        [presentation.components.ethereum-connection :only [ethereum-connection]]
+        [presentation.components.disabled-panel :only [disabled-panel]]))
 
 (def status (js/document.getElementById "status"))
 (def content (js/document.getElementById "main"))
+(def account-id)
 
 (defn render[container content]
   (rdom/render content container))
 
-;;--- compontents ---
-(def token-balance (r/atom ""))
-
-(defn ^:export on-token-entered[account token-id]
-  (-> (eth/get-token-balance account token-id)
-      (.then #(reset! token-balance %))
-      (.catch #(js/window.alert %))))
-
-(defn new-token-stream[account balance]
-  [:p 
-    [:span "account: " account " balance: " balance]
-    [:br] 
-    [:span "create new token stream"]
-    [:br] 
-    [:label {:for "token-address"} "token address"]
-    [:input#token-address {:type "text" :onKeyPress #(when (some #{13} [(.-keyCode %) (.-which %)])
-                                          (let [token-id (-> % .-target .-value)]
-                                            (presentation.the-controller/on-token-entered account token-id)))}]
-    [:span @token-balance]])
+(defn on-token-entered[token-id]
+  (try
+    (let [token (eth/get-erc20 token-id)]
+      (reset! token-status "searching...")
+      (-> (.balanceOf token account-id)
+          (.then #(reset! token-status (str "found (balance: "% ")")))
+          (.catch #(reset! token-status (str %)))))
+  (catch :default e
+    (reset! token-status (str e)))))
 
 (defn on-connected[account]
-  (->(eth/get-ether-balance account)
-     (.then #(render content [new-token-stream account %]))))
+  (set! account-id account)
+  (-> (eth/get-ether-balance account-id)
+      (.then (fn[balance]
+                (render status [ethereum-connection account-id balance])
+                (render content [new-token-stream on-token-entered])))))
+
+(defn on-disconnected[]
+  (render status "Connect to ethereum provider to continue")
+  (render content [disabled-panel [new-token-stream nil]]))
 
 (defn ^:export main[]
+  ;(js/window.addEventListener "error" #(render status (.-message %)))
   (if (eth/not-installed?)
     (render status "Ethereum provider is not installed. Please install it to continue.")
     ;else
-    (-> (eth/connect on-connected
-                    #(render content "Connect to ethereum provider to continue"))
-        (.catch #(render content (str "error connecting to ethereum: " %))))))
+      (do (on-disconnected)
+          (eth/connect on-connected on-disconnected))))
 
