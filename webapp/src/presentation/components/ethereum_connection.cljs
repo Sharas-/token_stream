@@ -1,4 +1,4 @@
 (ns presentation.components.ethereum-connection)
 
-(defn ethereum-connection[account, balance]
-  [:span "account: " account " balance: " balance])
+(defn ethereum-connection[account network balance]
+  [:span "account: " account " network: " network " balance: " balance])
