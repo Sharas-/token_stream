@@ -1,8 +1,11 @@
-{:source-paths ["webapp/src"]
+{:source-paths ["webapp/src" "webapp/test"]
  :dependencies [[reagent "0.10.0"]]
- :dev-http {8080 "webapp/assets"}
- :builds {:token_stream {:target :browser
-                         :autoload true
-                         :output-dir "webapp/assets/js"
-                         :asset-path "webapp/assets"
-                         :modules {:main {:init-fn presentation.the-controller/main}}}}}
+ :builds {:dev {:target :browser
+                        :autoload true
+                        :output-dir "webapp/assets/js"
+                        :asset-path "webapp/assets"
+                        :devtools {:http-port 8080 :http-root  "webapp/assets"}      
+                        :modules {:main {:init-fn presentation.the-controller/main}}}
+          :test {:target :browser-test
+                 :test-dir "testrun"
+                 :devtools {:http-port 8181 :http-root "testrun"}}}}

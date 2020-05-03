@@ -1,17 +1,14 @@
-(ns presentation.components.new-token-stream
+(ns presentation.components.token-search
     (:require [reagent.core :as r]))
 
 ;--- view-model ---
-(def token-status (r/atom ""))
+(def status (r/atom ""))
 
-(defn new-token-stream[on-token-entered]
+(defn token-search[on-token-entered]
   [:p 
-    [:br] 
-    [:span "create new token stream"]
-    [:br] 
     [:label {:for "token-address"} "token address"]
     [:input#token-address {:type "text" :onKeyPress #(when (some #{13} [(.-keyCode %) (.-which %)])
                                           (let [token-id (-> % .-target .-value)]
                                             (on-token-entered token-id)))}]
-    [:span @token-status]])
+    [:span @status]])
 
